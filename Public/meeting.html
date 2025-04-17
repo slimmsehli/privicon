@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Room</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="meeting-container">
+    <div class="top-banner">
+      <div class="meeting-link">
+        <input type="text" id="meeting-link-input" readonly>
+        <button id="copy-link-btn" class="copy-btn">
+          <img src="https://img.icons8.com/ios-filled/50/ffffff/copy.png" alt="Copy" width="20" height="20">
+        </button>
+      </div>
+      <div class="controls">
+        <button id="camera-btn" class="control-btn">
+          <img id="camera-icon" src="https://img.icons8.com/ios-filled/50/ffffff/camera.png" alt="Camera On">
+        </button>
+        <button id="mute-btn" class="control-btn">
+          <img id="mute-icon" src="https://img.icons8.com/ios-filled/50/ffffff/microphone.png" alt="Unmute">
+        </button>
+        <button id="screen-share-btn" class="control-btn">
+          <img id="screen-share-icon" src="../share.png" alt="Share Screen">
+            <!--https://img.icons8.com/ios-filled/50/ffffff/share-screen.png-->>
+        </button>
+        <button id="record-btn" class="control-btn">
+          <img id="record-icon" src="https://img.icons8.com/ios-filled/50/ffffff/record.png" alt="Record">
+        </button>
+        <button id="leave-btn" class="control-btn">Leave</button>
+      </div>
+    </div>
+    <div id="participants" class="participants-grid"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="https://unpkg.com/simple-peer@9.11.0/simplepeer.min.js"></script>
+  <script src="scripts.js"></script>
+  <script>
+    const roomId = new URLSearchParams(window.location.search).get('roomId');
+    const localVideo = initializeLocalVideo('participants');
+    const meetingLinkInput = document.getElementById('meeting-link-input');
+    const copyLinkBtn = document.getElementById('copy-link-btn');
+
+    // Set meeting link
+    const meetingUrl = `${window.location.origin}/meeting.html?roomId=${roomId}`;
+    meetingLinkInput.value = meetingUrl;
+
+    // Copy link
+    copyLinkBtn.addEventListener('click', () => {
+      meetingLinkInput.select();
+      navigator.clipboard.writeText(meetingLinkInput.value).then(() => {
+        alert('Meeting link copied to clipboard!');
+      });
+    });
+
+    // Start video and set up room
+    const videoEnabled = localStorage.getItem('videoEnabled') === 'true';
+    const audioEnabled = localStorage.getItem('audioEnabled') === 'true';
+    startVideo(videoEnabled, audioEnabled).then((stream) => {
+      localStream = stream;
+      if (localStream) {
+        localVideo.srcObject = localStream;
+        // Update button states based on initial preferences
+        if (!videoEnabled) {
+          document.getElementById('camera-icon').src = 'https://img.icons8.com/ios-filled/50/ffffff/no-camera.png';
+        }
+        if (!audioEnabled) {
+          document.getElementById('mute-icon').src = 'https://img.icons8.com/ios-filled/50/ffffff/mute.png';
+        }
+      } else {
+        localVideo.style.backgroundColor = '#000';
+      }
+      setupRoom(roomId);
+    });
+
+    // Camera toggle
+    document.getElementById('camera-btn').addEventListener('click', () => {
+      const newCameraState = toggleCamera();
+      document.getElementById('camera-icon').src = newCameraState
+        ? 'https://img.icons8.com/ios-filled/50/ffffff/camera.png'
+        : 'https://img.icons8.com/ios-filled/50/ffffff/no-camera.png';
+    });
+
+    // Mute toggle
+    document.getElementById('mute-btn').addEventListener('click', () => {
+      const newMuteState = toggleMute();
+      document.getElementById('mute-icon').src = newMuteState
+        ? 'https://img.icons8.com/ios-filled/50/ffffff/mute.png'
+        : 'https://img.icons8.com/ios-filled/50/ffffff/microphone.png';
+    });
+
+    // Screen sharing
+    document.getElementById('screen-share-btn').addEventListener('click', () => {
+      toggleScreenShare(localVideo, roomId);
+    });
+
+    // Record
+    document.getElementById('record-btn').addEventListener('click', () => {
+      if (!isRecording) {
+        startRecording();
+      } else {
+        stopRecording();
+      }
+    });
+
+    // Leave meeting
+    document.getElementById('leave-btn').addEventListener('click', () => {
+      if (isRecording) stopRecording();
+      if (isSharingScreen) stopScreenShare(localVideo, roomId);
+      socket.disconnect();
+      window.close();
+    });
+
+    // Save recording on window close
+    window.addEventListener('beforeunload', () => {
+      if (isRecording) stopRecording();
+      if (isSharingScreen) stopScreenShare(localVideo, roomId);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Conference</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-container">
+    <h1>Video Conference App</h1>
+    <button id="start-meeting-btn" class="action-btn">Start a Meeting</button>
+  </div>
+
+  <!-- Media Preferences Modal -->
+  <div id="media-modal" class="modal">
+    <div class="modal-content">
+      <h2>Media Preferences</h2>
+      <label>
+        <input type="checkbox" id="video-check" checked> Enable Camera
+      </label>
+      <label>
+        <input type="checkbox" id="audio-check" checked> Enable Audio
+      </label>
+      <div class="meeting-link">
+        <label for="meeting-link-input">Meeting Link:</label>
+        <input type="text" id="meeting-link-input" readonly>
+        <button id="copy-link-btn" class="copy-btn">
+          <img src="https://img.icons8.com/ios-filled/50/ffffff/copy.png" alt="Copy" width="20" height="20">
+        </button>
+      </div>
+      <div>
+        <button id="confirm-media-btn" class="action-btn">Confirm</button>
+        <button id="cancel-media-btn" class="action-btn cancel-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="scripts.js"></script>
+  <script>
+    const modal = document.getElementById('media-modal');
+    const confirmBtn = document.getElementById('confirm-media-btn');
+    const cancelBtn = document.getElementById('cancel-media-btn');
+    const meetingLinkInput = document.getElementById('meeting-link-input');
+    const copyLinkBtn = document.getElementById('copy-link-btn');
+    let onConfirmCallback;
+
+    function showMediaModal(callback) {
+      modal.style.display = 'flex';
+      onConfirmCallback = callback;
+
+      // Generate meeting link
+      startMeeting((roomId) => {
+        const meetingUrl = `${window.location.origin}/meeting.html?roomId=${roomId}`;
+        meetingLinkInput.value = meetingUrl;
+      });
+    }
+
+    confirmBtn.addEventListener('click', () => {
+      const videoEnabled = document.getElementById('video-check').checked;
+      const audioEnabled = document.getElementById('audio-check').checked;
+      localStorage.setItem('videoEnabled', videoEnabled);
+      localStorage.setItem('audioEnabled', audioEnabled);
+      modal.style.display = 'none';
+      onConfirmCallback();
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+      meetingLinkInput.value = ''; // Clear the link on cancel
+    });
+
+    copyLinkBtn.addEventListener('click', () => {
+      meetingLinkInput.select();
+      navigator.clipboard.writeText(meetingLinkInput.value).then(() => {
+        alert('Meeting link copied to clipboard!');
+      });
+    });
+
+    document.getElementById('start-meeting-btn').addEventListener('click', () => {
+      showMediaModal(() => {
+        const meetingUrl = meetingLinkInput.value;
+        window.open(meetingUrl, '_blank');
+      });
+    });
+  </script>
+</body>
+</html>
