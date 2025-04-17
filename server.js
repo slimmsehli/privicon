@@ -69,11 +69,10 @@ io.on('connection', (socket) => {
 });
 
 
+const PORT = process.env.PORT || 3000;
 server.get("/", (req, res) => {
   res.send("nothing to show here");
-}); 
-
-const PORT = process.env.PORT || 3000;
+});
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 // Start the server
 //const PORT = process.env.PORT || 3000;
