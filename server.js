@@ -70,7 +70,7 @@ io.on('connection', (socket) => {
 
 
 const PORT = process.env.PORT || 3000;
-server.get("/", (req, res) => {
+app.get("/", (req, res) => {
   res.send("nothing to show here");
 });
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
