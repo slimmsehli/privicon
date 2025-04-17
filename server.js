@@ -12,6 +12,19 @@ const io = new Server(server, {
 // Serve static files
 app.use(express.static('public'));
 
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve index.html on root path
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Optional: handle unknown routes (like React Router)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Track screen sharing state
 const screenSharing = {};
 
